@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 app.get("/vacancies", async (req, res) => {
   try {
