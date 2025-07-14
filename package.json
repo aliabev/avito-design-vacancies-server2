@@ -1,14 +1,15 @@
 {
   "name": "avito-design-vacancies",
   "version": "1.0.0",
-  "description": "Proxy server for Avito vacancies using puppeteer-core and chromium",
+  "description": "Proxy server for Avito design vacancies",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^126.0.0",
     "express": "^5.1.0",
-    "puppeteer-core": "^21.3.8",
-    "@sparticuz/chromium": "^112.0.0"
+    "puppeteer-core": "^21.3.8"
   }
 }
