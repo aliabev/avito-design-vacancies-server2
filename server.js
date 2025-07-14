@@ -1,14 +1,11 @@
-// src/server.js или корень проекта, как у тебя лежит
 const express = require("express");
-const puppeteer = require("puppeteer-core");  // вместо sparticuz
-const app = express();
+const puppeteer = require("puppeteer-core");
 
-// Railway и подобные платформы задают PORT в env — для локалки используем 8000
+const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.get("/vacancies", async (req, res) => {
   try {
-    // в контейнере Chromium должен быть установлен системно
     const browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       executablePath: process.env.CHROME_PATH || "/usr/bin/chromium-browser",
