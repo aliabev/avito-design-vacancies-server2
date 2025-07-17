@@ -1,55 +1,42 @@
 // server.js
 const express = require('express');
-const puppeteer = require('puppeteer');
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 
 const app = express();
-// Railway/Vercel/Render прокидывают PORT, а локально будет 8080
 const PORT = process.env.PORT || 8080;
 
 app.get('/vacancies', async (_req, res) => {
-  let browser;
   try {
-    browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      headless: true,
+    // Достаём HTML страницы вакансий
+    const resp = await fetch('https://career.avito.com/vacancies/dizayn', {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
     });
-    const page = await browser.newPage();
-    await page.goto('https://career.avito.com/vacancies/dizayn', {
-      waitUntil: 'networkidle2'
+    const html = await resp.text();
+
+    // Парсим через cheerio
+    const $ = cheerio.load(html);
+    const vacancies = [];
+
+    // Выбираем все <a> внутри data-qa="vacancy-item"
+    $('[data-qa="vacancy-item"] a').each((_, el) => {
+      const link = $(el);
+      const title = link.text().trim();
+      let url = link.attr('href') || '';
+      // Если URL относительный, дополняем доменом
+      if (url.startsWith('/')) {
+        url = 'https://career.avito.com' + url;
+      }
+      vacancies.push({ title, url });
     });
-
-    // даём React-е и fetch-запросам подгрузиться
-    await page.waitForTimeout(3000);
-
-    // собираем все ссылки, в href которых есть "/vacancies/",
-    // и фильтруем по регулярке, чтобы получить только карточки
-    const vacancies = await page.$$eval('a[href*="/vacancies/"]', links =>
-      links
-        .filter(a => {
-          try {
-            // вытащить путь из URL
-            const path = new URL(a.href).pathname;
-            // должен выглядеть как "/vacancies/что-то-русскими-и-англ-буквами"
-            return /^\/vacancies\/[A-Za-z0-9\-_%]+$/.test(path);
-          } catch {
-            return false;
-          }
-        })
-        .map(a => ({
-          title: a.textContent.trim(),
-          url: a.href
-        }))
-    );
 
     res.json({ vacancies });
   } catch (err) {
-    console.error('❌ Ошибка при получении вакансий:', err);
+    console.error('Ошибка при получении вакансий:', err);
     res.status(500).send('Ошибка при получении вакансий');
-  } finally {
-    if (browser) await browser.close();
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Vacancies API running on port ${PORT}`);
+  console.log(`✅ Vacancies API listening on port ${PORT}`);
 });
