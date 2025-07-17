@@ -1,7 +1,6 @@
 {
   "name": "avito-design-vacancies",
   "version": "1.0.0",
-  "description": "Proxy for Avito Design Vacancies",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
