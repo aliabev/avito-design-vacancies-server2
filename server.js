@@ -1,36 +1,34 @@
-const express = require("express");
-const fetch = require("node-fetch");
-const cheerio = require("cheerio");
+const express = require('express');
+const puppeteer = require('puppeteer');
 
 const app = express();
-// Railway подставит свою переменную PORT автоматически.
-// В локале fallback на 3000
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
-app.get("/vacancies", async (req, res) => {
+app.get('/vacancies', async (req, res) => {
   try {
-    // Получаем HTML страницы Авито
-    const response = await fetch(
-      "https://career.avito.com/vacancies/dizayn/?q=&action=filter&direction=dizayn&tags%5B%5D=s26531"
-    );
-    const html = await response.text();
-
-    // Загружаем Cheerio
-    const $ = cheerio.load(html);
-
-    // Выбираем все элементы вакансий
-    const vacancies = [];
-    $('[data-qa="vacancy-item"] a').each((_, el) => {
-      vacancies.push({
-        title: $(el).text().trim(),
-        url: $(el).attr("href")
-      });
+    const browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
     });
 
+    const page = await browser.newPage();
+    await page.goto(
+      'https://career.avito.com/vacancies/dizayn/?q=&action=filter&direction=dizayn&tags%5B%5D=s26531',
+      { waitUntil: 'networkidle2' }
+    );
+
+    const vacancies = await page.$$eval('[data-qa="vacancy-item"] a', links =>
+      links.map(link => ({
+        title: link.textContent.trim(),
+        url: link.href,
+      }))
+    );
+
+    await browser.close();
     res.json({ vacancies });
   } catch (error) {
-    console.error("Ошибка при получении вакансий:", error);
-    res.status(500).send("Ошибка при получении вакансий");
+    console.error('Ошибка при получении вакансий:', error);
+    res.status(500).send('Ошибка при получении вакансий');
   }
 });
 
