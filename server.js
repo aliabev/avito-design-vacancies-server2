@@ -1,8 +1,13 @@
+// server.js
 const express = require("express");
-const puppeteer = require("puppeteer");
+const cors = require("cors");
+const puppeteer = require("puppeteer"); // ставим обычный puppeteer, он тянет свой Chromium
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(cors()); // разрешаем Figma (и любым другим фронтам) делать fetch
+
+// Railway подставляет нужный порт через env PORT
+const PORT = process.env.PORT || 8080;
 
 app.get("/vacancies", async (req, res) => {
   let browser;
@@ -21,14 +26,14 @@ app.get("/vacancies", async (req, res) => {
       ".vacancies-section__item",
       items =>
         items.map(item => {
-          // ссылка
+          // Ссылка
           const linkEl = item.querySelector("a.vacancies-section__item-link");
           const href = linkEl?.getAttribute("href") || "";
           const url = href.startsWith("http")
             ? href
             : `https://career.avito.com${href}`;
 
-          // заголовок
+          // Заголовок
           const titleEl = item.querySelector(".vacancies-section__item-content");
           const title = titleEl?.textContent.trim() || "";
 
@@ -39,7 +44,7 @@ app.get("/vacancies", async (req, res) => {
     res.json({ vacancies });
   } catch (error) {
     console.error("Ошибка при получении вакансий:", error);
-    res.status(500).send("Ошибка при получении вакансий");
+    res.status(500).json({ error: "Ошибка при получении вакансий" });
   } finally {
     if (browser) await browser.close();
   }
